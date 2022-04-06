@@ -20,3 +20,11 @@ impl SqlRule for NoSelectStar {
 }
 ```
 
+Output supports line/token location & offending code
+```
+Line 2, Token 2: Do not use * in select list, specify columns
+"SELECT * FROM DBO.TABLE AS T1"
+
+Line 3, Token 7: Do not use NOLOCK
+"    INNER JOIN DBO.TABLE2 AS T2 WITH (NOLOCK)"
+```
