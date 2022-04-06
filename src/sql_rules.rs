@@ -57,3 +57,22 @@ impl SqlRule for LeftOpenTran {
         }
     }
 }
+
+pub struct NoSelectInTran {}
+impl SqlRule for NoSelectInTran {
+    fn check(&self ,fstat: &crate::file_status_flags::FileStatusFlags, current_token: &str) -> bool {
+        if fstat.in_transaction && fstat.select && current_token == "SELECT" {
+            return true;
+        }
+        return false;
+    }
+
+    fn get_violation(&self, line:u8, token_location:u8, offending_code: Vec<String>) -> Violation {
+        Violation { 
+            line: line, 
+            token_location: token_location, 
+            violation_string: String::from("Do not run select statements in transaction"), 
+            offending_code: offending_code 
+        }
+    }
+}

@@ -101,9 +101,17 @@ fn file_tokenize(file_to_tokenize: File) -> ParsedSqlFile {
 fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
     let mut violations: Vec<Violation> = Vec::new();
     
-    let rules: Vec<Box<dyn SqlRule>> = vec![
+    //Rules for token-by-token parsing
+    let token_rules: Vec<Box<dyn SqlRule>> = vec![
         Box::new(NoNoLock{}),
-        Box::new(NoSelectStar{})];
+        Box::new(NoSelectStar{}),
+        Box::new(NoSelectInTran{})
+    ];
+    
+    //Rules for end of file checks
+    let post_rules: Vec<Box<dyn SqlRule>> = vec![
+        Box::new(LeftOpenTran{})
+    ];
 
     let mut fstat: FileStatusFlags = Default::default();
 
@@ -113,6 +121,7 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
     for line in file_to_review.tokenized_data {
         line_number += 1;
         token_number = 0;
+        
         fstat.line_comment = false;
         let mut line_copy: Vec<String> = Vec::new();
         line_copy.clone_from(&line);
@@ -120,16 +129,26 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
 
         //State check on a per word basis
         for word in line {
+            if word == "" {
+                continue;
+            }
+            
             token_number += 1;
 
             fstat.finalize_closing_flags();
             fstat.set_flags(&word);
 
-            for rule in &rules {
+            for rule in &token_rules {
                 if rule.check(&fstat, &word){
                     violations.push(rule.get_violation(line_number, token_number, line_copy.clone()))
                 }
             }
+        }
+    }
+
+    for rule in &post_rules {
+        if rule.check(&fstat, ""){
+            violations.push(rule.get_violation(0, 0, Vec::new()))
         }
     }
     violations
