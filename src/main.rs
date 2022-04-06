@@ -5,6 +5,9 @@ use std::io::Read;
 mod violation;
 use violation::*;
 
+mod sql_rule;
+use sql_rule::*;
+
 mod sql_rules;
 use sql_rules::*;
 
@@ -18,9 +21,6 @@ pub struct ParsedSqlFile {
     tokens: u8,
     characters: u8,
 }
-
-
-
 fn main() {
     for r in std::env::args() {
         match r.ends_with(".sql") {
@@ -28,7 +28,7 @@ fn main() {
                 Ok(file) => {
                     let parsed_file = file_tokenize(file);
                     println!("{:#?}", parsed_file);
-                    let violations = get_file_violations(parsed_file);
+                    let violations = review_file(parsed_file);
                     
                     println!("");
                     for violation in violations {
@@ -98,8 +98,12 @@ fn file_tokenize(file_to_tokenize: File) -> ParsedSqlFile {
     }
 }
 
-fn get_file_violations(file_to_review: ParsedSqlFile) -> Vec<Violation> {
+fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
     let mut violations: Vec<Violation> = Vec::new();
+    
+    let rules: Vec<Box<dyn SqlRule>> = vec![
+        Box::new(NoNoLock{}),
+        Box::new(NoSelectStar{})];
 
     let mut fstat: FileStatusFlags = Default::default();
 
@@ -113,29 +117,18 @@ fn get_file_violations(file_to_review: ParsedSqlFile) -> Vec<Violation> {
         let mut line_copy: Vec<String> = Vec::new();
         line_copy.clone_from(&line);
         
+
+        //State check on a per word basis
         for word in line {
             token_number += 1;
 
             fstat.finalize_closing_flags();
             fstat.set_flags(&word);
 
-            //Rules
-            if SqlRules::no_select_star(&fstat, &word) { 
-                violations.push(Violation {
-                    violation_string: String::from("Do not use * in Select Statements"),
-                    line: line_number,
-                    token_location: token_number,
-                    offending_code: line_copy.clone()
-                });
-            }
-
-            if SqlRules::no_nolock(&fstat, &word){
-                violations.push(Violation {
-                    violation_string: String::from("Do not use NOLOCK"),
-                    line: line_number,
-                    token_location: token_number,
-                    offending_code: line_copy.clone()
-                });
+            for rule in &rules {
+                if rule.check(&fstat, &word){
+                    violations.push(rule.get_violation(line_number, token_number, line_copy.clone()))
+                }
             }
         }
     }

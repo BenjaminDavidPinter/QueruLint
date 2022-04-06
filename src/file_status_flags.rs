@@ -4,7 +4,10 @@ pub struct FileStatusFlags {
     pub block_comment: bool,
     pub closing_block_comment: bool,
     pub closing_select: bool,
-    pub select: bool
+    pub select: bool,
+    pub begin: bool,
+    pub end: bool,
+    pub in_transaction : bool
 }
 
 impl FileStatusFlags {
@@ -55,6 +58,22 @@ impl FileStatusFlags {
             }
             "GO" => {
                 self.closing_select = true;
+            },
+            "BEGIN" => {
+                self.begin = true;
+            },
+            "TRAN" | "TRANSACTION" => {
+                if self.begin {
+                    self.begin = false;
+                    self.in_transaction = true;
+                }
+                else if self.end {
+                    self.end = false;
+                    self.in_transaction = false;
+                }
+            },
+            "END" => {
+                self.end = true;
             }
             &_ => {} //Leave this here as we implement the entire sql language
         }
