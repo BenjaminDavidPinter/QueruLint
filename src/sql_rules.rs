@@ -42,7 +42,7 @@ impl SqlRule for NoNoLock {
 
 pub struct LeftOpenTran {}
 impl SqlRule for LeftOpenTran {
-    fn check(&self ,fstat: &FileStateflags, current_token: &str) -> bool {
+    fn check(&self ,fstat: &FileStateflags, _current_token: &str) -> bool {
         if fstat.in_transaction {
             return true;
         }
@@ -80,7 +80,7 @@ impl SqlRule for NoSelectInTran {
 
 pub struct NoDeclareInTran {}
 impl SqlRule for NoDeclareInTran {
-    fn check(&self ,fstat: &FileStateflags, current_token: &str) -> bool {
+    fn check(&self ,fstat: &FileStateflags, _current_token: &str) -> bool {
         if fstat.in_transaction && fstat.declare {
             return true;
         }

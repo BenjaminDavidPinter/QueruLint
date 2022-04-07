@@ -1,4 +1,3 @@
-use crate::QueruParser;
 use crate::Violation;
 use crate::queru_parser::FileStateflags;
 
