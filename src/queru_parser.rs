@@ -1,7 +1,21 @@
 #[derive(Debug, Default)]
 pub struct QueruParser{
     pub flags: FileStateflags,
-    pub vars: Vec<String>
+    pub vars: Vec<Variable>
+}
+
+#[derive(Debug, Default)]
+pub struct Variable {
+    pub variable_name: String,
+    pub variable_type: String,
+    pub initial_value: String
+}
+impl Variable{
+    pub fn new(name: String) -> Variable{
+        Variable { variable_name: name, 
+            variable_type: String::new(),
+            initial_value: String::new() }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -14,7 +28,9 @@ pub struct FileStateflags {
     pub begin: bool,
     pub end: bool,
     pub in_transaction : bool,
-    pub declare: bool
+    pub declare: bool,
+    pub check_datatype: bool,
+    pub check_var_initial_value: bool
 }
 
 impl QueruParser{
@@ -63,6 +79,9 @@ impl QueruParser{
             }
             ";" => {
                 self.flags.closing_select = true;
+                if self.flags.check_var_initial_value {
+                    self.vars.last_mut().unwrap().initial_value = String::new();
+                }
             }
             "GO" => {
                 self.flags.closing_select = true;
@@ -86,12 +105,28 @@ impl QueruParser{
             "DECLARE" => {
                 self.flags.select = false;
                 self.flags.declare = true;
+            },
+            "=" => {
+                //Capture the step over '=' so we can get the value below
             }
             &_ => {
+                //Implement in reverse precedent; Initial Value -> Type -> Name etc
+                if self.flags.check_var_initial_value {
+                    self.vars.last_mut().unwrap().initial_value = String::from(word);
+                    self.flags.check_var_initial_value = false;
+                }
+                if self.flags.check_datatype  {
+                    self.vars.last_mut().unwrap().variable_type = String::from(word);
+                    self.flags.check_datatype = false;
+                    self.flags.check_var_initial_value = true;
+                }
                 if self.flags.declare {
-                    self.vars.push(String::from(word)); //Just keep a copy of the possible variable name for later
+                    self.vars.push(
+                        Variable::new(String::from(word))
+                    ); //Just keep a copy of the possible variable name for later
                     self.flags.declare = false;
-                }  
+                    self.flags.check_datatype = true;
+                }
             } //Leave this here as we implement the entire sql language
         }
     }
