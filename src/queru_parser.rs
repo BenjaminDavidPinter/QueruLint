@@ -52,6 +52,13 @@ impl QueruParser{
         }
     }
 
+    pub fn close_statement_flags(&mut self){
+        self.flags.declare = false;
+        self.flags.check_datatype = false;
+        self.flags.check_var_initial_value = false;
+        self.flags.select = false;
+    }
+
     pub fn set_flags(&mut self, word: &str) {
         if word.starts_with("--") {
             self.flags.line_comment = true;
@@ -59,6 +66,7 @@ impl QueruParser{
         if word.contains(";") {
             self.flags.closing_select = true;
             self.flags.declare = false;
+            self.close_statement_flags();
         }
 
         match word.to_uppercase().as_str() {
@@ -81,10 +89,12 @@ impl QueruParser{
                 self.flags.closing_select = true;
                 if self.flags.check_var_initial_value {
                     self.vars.last_mut().unwrap().initial_value = String::new();
+                    self.flags.check_var_initial_value = false;
                 }
             }
             "GO" => {
                 self.flags.closing_select = true;
+                self.close_statement_flags();
             },
             "BEGIN" => {
                 self.flags.begin = true;
@@ -101,6 +111,7 @@ impl QueruParser{
             },
             "END" => {
                 self.flags.end = true;
+                self.close_statement_flags();
             },
             "DECLARE" => {
                 self.flags.select = false;
