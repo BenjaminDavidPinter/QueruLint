@@ -42,6 +42,7 @@ impl QueruParser{
         }
         if word.contains(";") {
             self.flags.closing_select = true;
+            self.flags.declare = false;
         }
 
         match word.to_uppercase().as_str() {

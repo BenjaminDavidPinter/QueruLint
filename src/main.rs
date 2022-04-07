@@ -98,7 +98,8 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
     let token_rules: Vec<Box<dyn SqlRule>> = vec![
         Box::new(NoNoLock{}),
         Box::new(NoSelectStar{}),
-        Box::new(NoSelectInTran{})
+        Box::new(NoSelectInTran{}),
+        Box::new(NoDeclareInTran{})
     ];
     
     //Rules for end of file checks
