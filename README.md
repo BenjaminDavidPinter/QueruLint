@@ -43,17 +43,17 @@ QueruParser {
         Variable {
             variable_name: "@datetime",
             variable_type: "datetime",
-            initial_value: "",
+            initial_value: "1/1/2021",
         },
         Variable {
             variable_name: "@whatever",
             variable_type: "datetime",
-            initial_value: "",
+            initial_value: "2/4/2021",
         },
         Variable {
             variable_name: "@badidea",
             variable_type: "int",
-            initial_value: "",
+            initial_value: "0",
         },
         Variable {
             variable_name: "@anotherBadIdea",
