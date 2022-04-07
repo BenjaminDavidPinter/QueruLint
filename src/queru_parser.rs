@@ -38,6 +38,12 @@ impl QueruParser{
         return self.flags.line_comment || self.flags.block_comment || self.flags.closing_block_comment;
     }
 
+    fn clean_str(string_to_clean: &str) -> String{
+        return string_to_clean
+        .replacen(';', "", 1)
+        .replacen("'", "", 2);
+    }
+
     pub fn finalize_closing_flags(&mut self) {
         //Finish block comment status bit flips
         if self.flags.closing_block_comment {
@@ -66,7 +72,6 @@ impl QueruParser{
         if word.contains(";") {
             self.flags.closing_select = true;
             self.flags.declare = false;
-            self.close_statement_flags();
         }
 
         match word.to_uppercase().as_str() {
@@ -123,17 +128,17 @@ impl QueruParser{
             &_ => {
                 //Implement in reverse precedent; Initial Value -> Type -> Name etc
                 if self.flags.check_var_initial_value {
-                    self.vars.last_mut().unwrap().initial_value = String::from(word);
+                    self.vars.last_mut().unwrap().initial_value = QueruParser::clean_str(word);
                     self.flags.check_var_initial_value = false;
                 }
                 if self.flags.check_datatype  {
-                    self.vars.last_mut().unwrap().variable_type = String::from(word);
+                    self.vars.last_mut().unwrap().variable_type = QueruParser::clean_str(word);
                     self.flags.check_datatype = false;
                     self.flags.check_var_initial_value = true;
                 }
                 if self.flags.declare {
                     self.vars.push(
-                        Variable::new(String::from(word))
+                        Variable::new(QueruParser::clean_str(word))
                     ); //Just keep a copy of the possible variable name for later
                     self.flags.declare = false;
                     self.flags.check_datatype = true;

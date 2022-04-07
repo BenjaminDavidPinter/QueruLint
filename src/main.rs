@@ -16,10 +16,7 @@ use queru_parser::*;
 
 #[derive(Debug, Default)]
 pub struct ParsedSqlFile {
-    tokenized_data: Vec<Vec<String>>,
-    lines: u8,
-    tokens: u8,
-    characters: u8,
+    tokenized_data: Vec<Vec<String>>
 }
 fn main() {
     for r in std::env::args() {
@@ -43,13 +40,10 @@ fn main() {
 
 fn file_tokenize(file_to_tokenize: File) -> ParsedSqlFile {
     let mut file_to_tokenize = file_to_tokenize; //This is mine now.
-    let char_count;
 
     let mut file_buff: Vec<u8> = Vec::new();
     match file_to_tokenize.read_to_end(&mut file_buff) {
-        Ok(bytes_read) => {
-            char_count = bytes_read as u8;
-        }
+        Ok(_) => {}
         Err(read_error) => panic!("\t{:?}", read_error),
     }
 
@@ -57,20 +51,15 @@ fn file_tokenize(file_to_tokenize: File) -> ParsedSqlFile {
     let mut line: Vec<String> = Vec::new();
     let mut word: Vec<char> = Vec::new();
 
-    let mut token_count = 0;
-    let mut line_count = 0;
-
     for c in file_buff {
         match c {
             32 => {
                 //Space
-                token_count += 1;
                 line.push(word.into_iter().collect());
                 word = Vec::new();
             }
             10 => {
                 //New Line
-                line_count += 1;
                 line.push(word.into_iter().collect());
                 document.push(line);
                 line = Vec::new();
@@ -84,11 +73,7 @@ fn file_tokenize(file_to_tokenize: File) -> ParsedSqlFile {
     line.push(word.into_iter().collect());
     document.push(line);
 
-    ParsedSqlFile {tokenized_data: document,
-        lines: line_count,
-        tokens: token_count,
-        characters: char_count,
-    }
+    ParsedSqlFile {tokenized_data: document}
 }
 
 fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
