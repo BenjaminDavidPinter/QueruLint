@@ -37,23 +37,23 @@ QueruParser {
         in_transaction: false,
         declare: false,
         check_datatype: false,
-        check_var_initial_value: true,
+        check_var_initial_value: false,
     },
     vars: [
         Variable {
             variable_name: "@datetime",
             variable_type: "datetime",
-            initial_value: "'1/1/2021';",
+            initial_value: "",
         },
         Variable {
             variable_name: "@whatever",
             variable_type: "datetime",
-            initial_value: "'2/4/2021';",
+            initial_value: "",
         },
         Variable {
             variable_name: "@badidea",
             variable_type: "int",
-            initial_value: "0;",
+            initial_value: "",
         },
         Variable {
             variable_name: "@anotherBadIdea",
