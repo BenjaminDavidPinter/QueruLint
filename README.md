@@ -20,8 +20,47 @@ impl SqlRule for NoSelectStar {
 }
 ```
 
-Output supports line/token location & offending code
+I have no idea how to build a parser, but right now, it's flag based.
+The flags help me figure out what state I'm in.
 ```
+QueruParser {
+    flags: FileStateflags {
+        line_comment: false,
+        block_comment: false,
+        closing_block_comment: false,
+        closing_select: false,
+        select: false,
+        begin: false,
+        end: false,
+        in_transaction: false,
+        declare: false,
+        check_datatype: false,
+        check_var_initial_value: true,
+    },
+    vars: [
+        Variable {
+            variable_name: "@datetime",
+            variable_type: "datetime",
+            initial_value: "'1/1/2021';",
+        },
+        Variable {
+            variable_name: "@whatever",
+            variable_type: "datetime",
+            initial_value: "'2/4/2021';",
+        },
+        Variable {
+            variable_name: "@badidea",
+            variable_type: "int",
+            initial_value: "0;",
+        },
+        Variable {
+            variable_name: "@anotherBadIdea",
+            variable_type: "int",
+            initial_value: "",
+        },
+    ],
+}
+
 Line 5, Token 1: Do not run select statements in transaction
 "SELECT * FROM DBO.TABLE AS T1"
 
@@ -33,4 +72,7 @@ Line 6, Token 7: Do not use NOLOCK
 
 Line 9, Token 1: Do not declare variables in transaction
 "declare @badidea int = 0;"
+
+Line 11, Token 1: Do not declare variables in transaction
+"declare @anotherBadIdea int"
 ```
