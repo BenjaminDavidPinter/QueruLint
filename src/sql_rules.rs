@@ -1,10 +1,11 @@
-use std::thread::current;
+use crate::FileStateflags;
+
 
 use crate::{SqlRule, violation::Violation};
 
 pub struct NoSelectStar {}
 impl SqlRule for NoSelectStar {
-    fn check(&self, fstat: &crate::file_status_flags::FileStatusFlags, current_token: &str) -> bool {
+    fn check(&self, fstat: &FileStateflags, current_token: &str) -> bool {
         if fstat.select && current_token == "*" {
             return true;
         }
@@ -22,7 +23,7 @@ impl SqlRule for NoSelectStar {
 
 pub struct NoNoLock {}
 impl SqlRule for NoNoLock {
-    fn check(&self, fstat: &crate::file_status_flags::FileStatusFlags, current_token: &str) -> bool {
+    fn check(&self, fstat: &FileStateflags, current_token: &str) -> bool {
         if fstat.select && (current_token == "(NOLOCK)" || current_token == "NOLOCK") {
             return true;
         }
@@ -41,7 +42,7 @@ impl SqlRule for NoNoLock {
 
 pub struct LeftOpenTran {}
 impl SqlRule for LeftOpenTran {
-    fn check(&self ,fstat: &crate::file_status_flags::FileStatusFlags, current_token: &str) -> bool {
+    fn check(&self ,fstat: &FileStateflags, current_token: &str) -> bool {
         if fstat.in_transaction {
             return true;
         }
@@ -60,7 +61,7 @@ impl SqlRule for LeftOpenTran {
 
 pub struct NoSelectInTran {}
 impl SqlRule for NoSelectInTran {
-    fn check(&self ,fstat: &crate::file_status_flags::FileStatusFlags, current_token: &str) -> bool {
+    fn check(&self ,fstat: &FileStateflags, current_token: &str) -> bool {
         if fstat.in_transaction && fstat.select && current_token == "SELECT" {
             return true;
         }
