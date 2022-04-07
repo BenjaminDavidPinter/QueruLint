@@ -22,6 +22,8 @@ impl SqlRule for NoSelectStar {
 
 I have no idea how to build a parser, but right now, it's flag based.
 The flags help me figure out what state I'm in.
+
+The entire parser/compiler is serialized to json and pasted into the output for debugging purposes
 ```
 QueruParser {
     flags: FileStateflags {
