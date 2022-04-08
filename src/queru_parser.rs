@@ -30,7 +30,11 @@ pub struct FileStateflags {
     pub in_transaction : bool,
     pub declare: bool,
     pub check_datatype: bool,
-    pub check_var_initial_value: bool
+    pub check_var_initial_value: bool,
+    pub where_clause: bool,
+    pub where_clause_left_assignment: bool,
+    pub where_clause_operand: bool,
+    pub where_clause_right_assignment: bool,
 }
 
 impl QueruParser{
@@ -86,11 +90,13 @@ impl QueruParser{
                 self.flags.closing_block_comment = true;
             }
             "SELECT" => {
+                self.flags.where_clause = false;
                 if !self.in_comment() {
                     self.flags.select = true;
                 }
             }
             ";" => {
+                self.flags.where_clause = false;
                 self.flags.closing_select = true;
                 if self.flags.check_var_initial_value {
                     self.vars.last_mut().unwrap().initial_value = String::new();
@@ -98,13 +104,16 @@ impl QueruParser{
                 }
             }
             "GO" => {
+                self.flags.where_clause = false;
                 self.flags.closing_select = true;
                 self.close_statement_flags();
             },
             "BEGIN" => {
                 self.flags.begin = true;
+                self.flags.where_clause = false;
             },
             "TRAN" | "TRANSACTION" => {
+                self.flags.where_clause = false;
                 if self.flags.begin {
                     self.flags.begin = false;
                     self.flags.in_transaction = true;
@@ -115,18 +124,24 @@ impl QueruParser{
                 }
             },
             "END" => {
+                self.flags.where_clause = false;
                 self.flags.end = true;
                 self.close_statement_flags();
             },
             "DECLARE" => {
+                self.flags.where_clause = false;
                 self.flags.select = false;
                 self.flags.declare = true;
             },
             "=" => {
                 //Capture the step over '=' so we can get the value below
+            },
+            "WHERE" | "OR" | "AND" => {
+                self.flags.where_clause = true;
             }
             &_ => {
                 //Implement in reverse precedent; Initial Value -> Type -> Name etc
+                //This is specifically for variable declarations
                 if self.flags.check_var_initial_value {
                     self.vars.last_mut().unwrap().initial_value = QueruParser::clean_str(word);
                     self.flags.check_var_initial_value = false;
@@ -142,6 +157,24 @@ impl QueruParser{
                     ); //Just keep a copy of the possible variable name for later
                     self.flags.declare = false;
                     self.flags.check_datatype = true;
+                }
+
+                //Just update the statuses on the where clause to track location
+                if self.flags.where_clause {
+                    println!("where_clause; {}", word);
+                    self.flags.where_clause = false;
+                    self.flags.where_clause_left_assignment = true;
+                } else if self.flags.where_clause_left_assignment {
+                    println!("where_clause_left_assignments; {}", word);
+                    self.flags.where_clause_left_assignment = false;
+                    self.flags.where_clause_operand = true;
+                } else if self.flags.where_clause_operand {
+                    println!("where_clause_operand; {}", word);
+                    self.flags.where_clause_operand = false;
+                    self.flags.where_clause_right_assignment = true;
+                } else if self.flags.where_clause_right_assignment {
+                    println!("where_clause_right_assignment; {}", word);
+                    self.flags.where_clause_right_assignment = false;
                 }
             } //Leave this here as we implement the entire sql language
         }
