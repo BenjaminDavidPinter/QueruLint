@@ -84,7 +84,8 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
         Box::new(NoNoLock{}),
         Box::new(NoSelectStar{}),
         Box::new(NoSelectInTran{}),
-        Box::new(NoDeclareInTran{})
+        Box::new(NoDeclareInTran{}),
+        Box::new(NoFunctionsInWhere{})
     ];
     
     //Rules for end of file checks

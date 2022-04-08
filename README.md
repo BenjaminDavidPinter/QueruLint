@@ -38,6 +38,10 @@ QueruParser {
         declare: false,
         check_datatype: false,
         check_var_initial_value: false,
+        where_clause: false,
+        where_clause_left_assignment: false,
+        where_clause_operand: false,
+        where_clause_right_assignment: false,
     },
     vars: [
         Variable {
@@ -72,9 +76,16 @@ Line 5, Token 2: Do not use * in select list, specify columns
 Line 6, Token 7: Do not use NOLOCK
 "    INNER JOIN DBO.TABLE2 AS T2 WITH (NOLOCK)"
 
-Line 9, Token 1: Do not declare variables in transaction
-"declare @badidea int = 0;"
+Line 8, Token 4: Do not use functions in where clauses, cache functions as variables first
+"where T1.createddt > GetDate()"
+
+Line 9, Token 2: Do not use functions in where clauses, cache functions as variables first
+"or somefunc() = 'ur mum'"
 
 Line 11, Token 1: Do not declare variables in transaction
+"declare @badidea int = 0;"
+
+Line 13, Token 1: Do not declare variables in transaction
 "declare @anotherBadIdea int"
+
 ```
