@@ -5,24 +5,23 @@ pub use crate::linting::sql_linting::*;
 use std::fs::File;
 use std::io::Read;
 
-pub fn lint_files(args: &[&str]) {
+pub fn lint_files(args: &[&str]) -> Vec<Violation>{
     for r in args {
         match r.ends_with(".sql") {
             true => match File::open(r) {
                 Ok(file) => {
                     let parsed_file = file_tokenize(file);
-                    let violations = review_file(parsed_file);
-
-                    println!();
-                    for violation in violations {
-                        println!("{}\n", violation);
-                    }
+                    
+                    
+                    //Is it safe to return from within here? Rather than return the value after we've escaped the match statement?
+                    return review_file(parsed_file);
                 }
                 _ => Default::default(), //TODO: Actual Error Handling here?
             },
             _ => Default::default(), //TODO: Actual Error Handling here?
         };
     }
+    Vec::new()
 }
 
 fn file_tokenize(file_to_tokenize: File) -> ParsedSqlFile {
@@ -120,6 +119,5 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
             violations.push(rule.get_violation(0, 0, Vec::new()))
         }
     }
-    println!("{:#?}", parser);
     violations
 }

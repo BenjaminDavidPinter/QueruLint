@@ -89,7 +89,7 @@ pub mod sql_linting {
     pub struct NoNoLock {}
     impl SqlRule for NoNoLock {
         fn check(&self, fstat: &FileStateflags, current_token: &str) -> bool {
-            if fstat.select && (current_token == "(NOLOCK)" || current_token == "NOLOCK") {
+            if fstat.select && (current_token.to_uppercase() == "(NOLOCK)" || current_token.to_uppercase() == "NOLOCK") {
                 return true;
             }
             return false;
@@ -137,7 +137,7 @@ pub mod sql_linting {
     pub struct NoSelectInTran {}
     impl SqlRule for NoSelectInTran {
         fn check(&self, fstat: &FileStateflags, current_token: &str) -> bool {
-            if fstat.in_transaction && fstat.select && current_token == "SELECT" {
+            if fstat.in_transaction && fstat.select && current_token.to_uppercase() == "SELECT" {
                 return true;
             }
             return false;

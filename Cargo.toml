@@ -7,3 +7,8 @@ edition = "2021"
 
 [dependencies]
 owo-colors = "3"
+criterion = "0.3"
+
+[[bench]]
+name = "parser_bench"
+harness = false

@@ -43,6 +43,7 @@ pub mod sql_parsing {
         pub where_clause_left_assignment: bool,
         pub where_clause_operand: bool,
         pub where_clause_right_assignment: bool,
+        pub commit: bool
     }
 
     impl QueruParser {
@@ -125,8 +126,8 @@ pub mod sql_parsing {
                     if self.flags.begin {
                         self.flags.begin = false;
                         self.flags.in_transaction = true;
-                    } else if self.flags.end {
-                        self.flags.end = false;
+                    } else if self.flags.commit {
+                        self.flags.commit = false;
                         self.flags.in_transaction = false;
                     }
                 }
@@ -134,6 +135,9 @@ pub mod sql_parsing {
                     self.flags.where_clause = false;
                     self.flags.end = true;
                     self.close_statement_flags();
+                },
+                "COMMIT" =>{
+                    self.flags.commit = true;
                 }
                 "DECLARE" => {
                     self.flags.where_clause = false;
@@ -166,19 +170,15 @@ pub mod sql_parsing {
 
                     //Just update the statuses on the where clause to track location
                     if self.flags.where_clause {
-                        println!("where_clause; {}", word);
                         self.flags.where_clause = false;
                         self.flags.where_clause_left_assignment = true;
                     } else if self.flags.where_clause_left_assignment {
-                        println!("where_clause_left_assignments; {}", word);
                         self.flags.where_clause_left_assignment = false;
                         self.flags.where_clause_operand = true;
                     } else if self.flags.where_clause_operand {
-                        println!("where_clause_operand; {}", word);
                         self.flags.where_clause_operand = false;
                         self.flags.where_clause_right_assignment = true;
                     } else if self.flags.where_clause_right_assignment {
-                        println!("where_clause_right_assignment; {}", word);
                         self.flags.where_clause_right_assignment = false;
                     }
                 } //Leave this here as we implement the entire sql language
