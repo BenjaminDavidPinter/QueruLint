@@ -1,36 +1,23 @@
-use core::default::Default;
+mod parsing;
+mod linting;
+pub use crate::parsing::sql_parsing::*;
+pub use crate::linting::sql_linting::*;
 use std::fs::File;
 use std::io::Read;
 
-mod violation;
-use violation::*;
-
-mod sql_rule;
-use sql_rule::*;
-
-mod sql_rules;
-use sql_rules::*;
-
-mod queru_parser;
-use queru_parser::*;
-
-#[derive(Debug, Default)]
-pub struct ParsedSqlFile {
-    tokenized_data: Vec<Vec<String>>
-}
-fn main() {
-    for r in std::env::args() {
+pub fn lint_files(args: &[&str]) {
+    for r in args {
         match r.ends_with(".sql") {
             true => match File::open(r) {
                 Ok(file) => {
                     let parsed_file = file_tokenize(file);
                     let violations = review_file(parsed_file);
-                    
-                    println!("");
+
+                    println!();
                     for violation in violations {
                         println!("{}\n", violation);
                     }
-                },
+                }
                 _ => Default::default(), //TODO: Actual Error Handling here?
             },
             _ => Default::default(), //TODO: Actual Error Handling here?
@@ -73,25 +60,25 @@ fn file_tokenize(file_to_tokenize: File) -> ParsedSqlFile {
     line.push(word.into_iter().collect());
     document.push(line);
 
-    ParsedSqlFile {tokenized_data: document}
+    ParsedSqlFile {
+        tokenized_data: document,
+    }
 }
 
 fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
     let mut violations: Vec<Violation> = Vec::new();
-    
+
     //Rules for token-by-token parsing
     let token_rules: Vec<Box<dyn SqlRule>> = vec![
-        Box::new(NoNoLock{}),
-        Box::new(NoSelectStar{}),
-        Box::new(NoSelectInTran{}),
-        Box::new(NoDeclareInTran{}),
-        Box::new(NoFunctionsInWhere{})
+        Box::new(NoNoLock {}),
+        Box::new(NoSelectStar {}),
+        Box::new(NoSelectInTran {}),
+        Box::new(NoDeclareInTran {}),
+        Box::new(NoFunctionsInWhere {}),
     ];
-    
+
     //Rules for end of file checks
-    let post_rules: Vec<Box<dyn SqlRule>> = vec![
-        Box::new(LeftOpenTran{})
-    ];
+    let post_rules: Vec<Box<dyn SqlRule>> = vec![Box::new(LeftOpenTran {})];
 
     let mut parser: QueruParser = Default::default();
 
@@ -101,15 +88,14 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
     for line in file_to_review.tokenized_data {
         line_number += 1;
         token_number = 0;
-        
+
         parser.flags.line_comment = false;
         let mut line_copy: Vec<String> = Vec::new();
         line_copy.clone_from(&line);
-        
 
         //State check on a per word basis
         for word in line {
-            if word == "" {
+            if word.is_empty() {
                 continue;
             }
             token_number += 1;
@@ -118,15 +104,19 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
             parser.set_flags(&word);
 
             for rule in &token_rules {
-                if rule.check(&parser.flags, &word){
-                    violations.push(rule.get_violation(line_number, token_number, line_copy.clone()))
+                if rule.check(&parser.flags, &word) {
+                    violations.push(rule.get_violation(
+                        line_number,
+                        token_number,
+                        line_copy.clone(),
+                    ))
                 }
             }
         }
     }
 
     for rule in &post_rules {
-        if rule.check(&parser.flags, ""){
+        if rule.check(&parser.flags, "") {
             violations.push(rule.get_violation(0, 0, Vec::new()))
         }
     }
