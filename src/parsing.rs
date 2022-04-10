@@ -54,7 +54,7 @@ pub mod sql_parsing {
         }
 
         fn clean_str(string_to_clean: &str) -> String {
-            return string_to_clean.replacen(';', "", 1).replacen("'", "", 2);
+            string_to_clean.replacen(';', "", 1).replacen('\'', "", 2)
         }
 
         pub fn finalize_closing_flags(&mut self) {
@@ -82,7 +82,7 @@ pub mod sql_parsing {
             if word.starts_with("--") {
                 self.flags.line_comment = true;
             }
-            if word.contains(";") {
+            if word.contains(';') {
                 self.flags.closing_select = true;
                 self.flags.declare = false;
             }
@@ -104,7 +104,7 @@ pub mod sql_parsing {
                         self.flags.select = true;
                     }
                 }
-                ';' => {
+                ";" => {
                     self.flags.where_clause = false;
                     self.flags.closing_select = true;
                     if self.flags.check_var_initial_value {
@@ -144,7 +144,7 @@ pub mod sql_parsing {
                     self.flags.select = false;
                     self.flags.declare = true;
                 }
-                '=' => {
+                "=" => {
                     //Capture the step over '=' so we can get the value below
                 }
                 "WHERE" | "OR" | "AND" => {
