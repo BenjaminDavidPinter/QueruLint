@@ -12,7 +12,6 @@ pub fn lint_files(args: &[&str]) -> Vec<Violation>{
                 Ok(file) => {
                     let parsed_file = file_tokenize(file);
                     
-                    
                     //Is it safe to return from within here? Rather than return the value after we've escaped the match statement?
                     return review_file(parsed_file);
                 }

@@ -1,1 +1,1 @@
-/Users/benjaminpinter/Projects/Rust/sql_parser/target/debug/libsql_parser.rlib: /Users/benjaminpinter/Projects/Rust/sql_parser/src/lib.rs /Users/benjaminpinter/Projects/Rust/sql_parser/src/linting.rs /Users/benjaminpinter/Projects/Rust/sql_parser/src/parsing.rs
+/Users/benjaminpinter/Documents/GitHub/QueruLint/target/debug/libsql_parser.rlib: /Users/benjaminpinter/Documents/GitHub/QueruLint/src/lib.rs /Users/benjaminpinter/Documents/GitHub/QueruLint/src/linting.rs /Users/benjaminpinter/Documents/GitHub/QueruLint/src/parsing.rs
