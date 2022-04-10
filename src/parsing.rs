@@ -104,7 +104,7 @@ pub mod sql_parsing {
                         self.flags.select = true;
                     }
                 }
-                ";" => {
+                ';' => {
                     self.flags.where_clause = false;
                     self.flags.closing_select = true;
                     if self.flags.check_var_initial_value {
@@ -144,7 +144,7 @@ pub mod sql_parsing {
                     self.flags.select = false;
                     self.flags.declare = true;
                 }
-                "=" => {
+                '=' => {
                     //Capture the step over '=' so we can get the value below
                 }
                 "WHERE" | "OR" | "AND" => {
