@@ -5,9 +5,9 @@ pub struct NoSelectStar {}
 impl SqlRule for NoSelectStar {
     fn check(&self, fstat: &crate::file_status_flags::FileStatusFlags, current_token: &str) -> bool {
         if fstat.select && current_token == "*" {
-            return true;
+            true
         }
-        return false;
+        false
     }
     fn get_violation(&self, line:u8, token_location:u8, offending_code: Vec<String>) -> Violation {
         Violation { 

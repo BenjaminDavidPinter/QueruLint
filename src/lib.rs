@@ -12,6 +12,7 @@ pub fn lint_files(args: &[&str]) -> Vec<Violation>{
                 Ok(file) => {
                     let parsed_file = file_tokenize(file);
                     
+                    
                     //Is it safe to return from within here? Rather than return the value after we've escaped the match statement?
                     return review_file(parsed_file);
                 }
@@ -80,11 +81,9 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
 
     let mut parser: QueruParser = Default::default();
 
-    let mut line_number = 0;
     let mut token_number;
 
-    for line in file_to_review.tokenized_data {
-        line_number += 1;
+    for (line_number, line) in file_to_review.tokenized_data.into_iter().enumerate() {
         token_number = 0;
 
         parser.flags.line_comment = false;
@@ -104,7 +103,7 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
             for rule in &token_rules {
                 if rule.check(&parser.flags, &word) {
                     violations.push(rule.get_violation(
-                        line_number,
+                        line_number.try_into().unwrap(),
                         token_number,
                         line_copy.clone(),
                     ))

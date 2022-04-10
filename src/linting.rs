@@ -39,7 +39,7 @@ pub mod sql_linting {
             if fstat.select && current_token == "*" {
                 return true;
             }
-            return false;
+            false
         }
         fn get_violation(
             &self,
@@ -67,7 +67,7 @@ pub mod sql_linting {
             {
                 return true;
             }
-            return false;
+            false
         }
         fn get_violation(
             &self,
@@ -92,7 +92,7 @@ pub mod sql_linting {
             if fstat.select && (current_token.to_uppercase() == "(NOLOCK)" || current_token.to_uppercase() == "NOLOCK") {
                 return true;
             }
-            return false;
+            false
         }
 
         fn get_violation(
@@ -116,7 +116,7 @@ pub mod sql_linting {
             if fstat.in_transaction {
                 return true;
             }
-            return false;
+            false
         }
 
         fn get_violation(
@@ -140,7 +140,7 @@ pub mod sql_linting {
             if fstat.in_transaction && fstat.select && current_token.to_uppercase() == "SELECT" {
                 return true;
             }
-            return false;
+            false
         }
 
         fn get_violation(
@@ -164,7 +164,7 @@ pub mod sql_linting {
             if fstat.in_transaction && fstat.declare {
                 return true;
             }
-            return false;
+            false
         }
 
         fn get_violation(
