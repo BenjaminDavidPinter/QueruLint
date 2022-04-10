@@ -63,7 +63,7 @@ pub mod sql_linting {
                 || fstat.where_clause_left_assignment
                 || fstat.where_clause_operand
                 || fstat.where_clause_right_assignment)
-                && current_token.ends_with(")")
+                && current_token.ends_with(')')
             {
                 return true;
             }
