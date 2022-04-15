@@ -66,19 +66,6 @@ fn file_tokenize(file_to_tokenize: File) -> ParsedSqlFile {
 
 fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
     let mut violations: Vec<Violation> = Vec::new();
-
-    //Rules for token-by-token parsing
-    let token_rules: Vec<Box<dyn SqlRule>> = vec![
-        Box::new(NoNoLock {}),
-        Box::new(NoSelectStar {}),
-        Box::new(NoSelectInTran {}),
-        Box::new(NoDeclareInTran {}),
-        Box::new(NoFunctionsInWhere {}),
-    ];
-
-    //Rules for end of file checks
-    let post_rules: Vec<Box<dyn SqlRule>> = vec![Box::new(LeftOpenTran {})];
-
     let mut parser: QueruParser = Default::default();
 
     let mut token_number;
@@ -92,30 +79,54 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
 
         //State check on a per word basis
         for word in line {
-            if word.is_empty() {
-                continue;
-            }
-            token_number += 1;
+            if word.is_empty() { continue; } else { token_number += 1; }
 
             parser.finalize_closing_flags();
             parser.set_flags(&word);
 
-            for rule in &token_rules {
-                if rule.check(&parser.flags, &word) {
-                    violations.push(rule.get_violation(
-                        line_number.try_into().unwrap(),
-                        token_number,
-                        line_copy.clone(),
-                    ))
-                }
+            if Rules::no_select_star(&parser.flags, &word) {
+                violations.push(Violation::new(
+                line_number.try_into().unwrap(),
+                token_number,
+                line_copy.clone(),
+                String::from("Do not use * in select list, specify columns")));
+            }
+            if Rules::no_delcare_in_tran(&parser.flags, &word) {
+                violations.push(Violation::new(
+                line_number.try_into().unwrap(),
+                token_number,
+                line_copy.clone(),
+                String::from("Do not declare variables in transaction")));
+            }
+            if Rules::no_function_in_where(&parser.flags, &word) {
+                violations.push(Violation::new(
+                line_number.try_into().unwrap(),
+                token_number,
+                line_copy.clone(),
+                String::from("Do not use functions in where clauses, cache functions as variables first")));
+            }
+            if Rules::no_nolock(&parser.flags, &word) {
+                violations.push(Violation::new(
+                line_number.try_into().unwrap(),
+                token_number,
+                line_copy.clone(),
+                String::from("Do not use NOLOCK")));
+            }
+            if Rules::no_select_in_tran(&parser.flags, &word) {
+                violations.push(Violation::new(
+                line_number.try_into().unwrap(),
+                token_number,
+                line_copy.clone(),
+                String::from("Do not run select statements in transaction")));
             }
         }
     }
-
-    for rule in &post_rules {
-        if rule.check(&parser.flags, "") {
-            violations.push(rule.get_violation(0, 0, Vec::new()))
-        }
+    if Rules::left_tran_open(&parser.flags, "") {
+        violations.push(Violation::new(
+            0,
+            0,
+            Vec::new(),
+            String::from("Transaction left open at end of file")));
     }
     violations
 }

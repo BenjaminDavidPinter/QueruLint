@@ -9,7 +9,21 @@ pub mod sql_linting {
         pub violation_string: String,
         pub offending_code: Vec<String>,
     }
-
+    impl Violation {
+        pub fn new(
+            line: u8,
+            token_location: u8,
+            offending_code: Vec<String>,
+            violation_message: String
+        ) -> Violation {
+            Violation {
+                line,
+                token_location,
+                violation_string: violation_message,
+                offending_code,
+            }
+        }
+    }
     impl fmt::Display for Violation {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(
@@ -23,42 +37,16 @@ pub mod sql_linting {
         }
     }
 
-    pub trait SqlRule {
-        fn get_violation(
-            &self,
-            line: u8,
-            toke_location: u8,
-            offending_code: Vec<String>,
-        ) -> Violation;
-        fn check(&self, fstat: &FileStateflags, current_token: &str) -> bool;
-    }
-
-    pub struct NoSelectStar {}
-    impl SqlRule for NoSelectStar {
-        fn check(&self, fstat: &FileStateflags, current_token: &str) -> bool {
+    pub struct Rules {}
+    impl Rules {
+        pub fn no_select_star(fstat: &FileStateflags, current_token: &str) -> bool {
             if fstat.select && current_token == "*" {
                 return true;
             }
             false
         }
-        fn get_violation(
-            &self,
-            line: u8,
-            token_location: u8,
-            offending_code: Vec<String>,
-        ) -> Violation {
-            Violation {
-                line: line,
-                token_location: token_location,
-                violation_string: String::from("Do not use * in select list, specify columns"),
-                offending_code: offending_code,
-            }
-        }
-    }
 
-    pub struct NoFunctionsInWhere {}
-    impl SqlRule for NoFunctionsInWhere {
-        fn check(&self, fstat: &FileStateflags, current_token: &str) -> bool {
+        pub fn no_function_in_where(fstat: &FileStateflags, current_token: &str) -> bool {
             if (fstat.where_clause
                 || fstat.where_clause_left_assignment
                 || fstat.where_clause_operand
@@ -69,116 +57,47 @@ pub mod sql_linting {
             }
             false
         }
-        fn get_violation(
-            &self,
-            line: u8,
-            token_location: u8,
-            offending_code: Vec<String>,
-        ) -> Violation {
-            Violation {
-                line: line,
-                token_location: token_location,
-                violation_string: String::from(
-                    "Do not use functions in where clauses, cache functions as variables first",
-                ),
-                offending_code: offending_code,
-            }
-        }
-    }
 
-    pub struct NoNoLock {}
-    impl SqlRule for NoNoLock {
-        fn check(&self, fstat: &FileStateflags, current_token: &str) -> bool {
+        pub fn no_nolock(fstat: &FileStateflags, current_token: &str) -> bool {
             if fstat.select && (current_token.to_uppercase() == "(NOLOCK)" || current_token.to_uppercase() == "NOLOCK") {
                 return true;
             }
             false
         }
 
-        fn get_violation(
-            &self,
-            line: u8,
-            token_location: u8,
-            offending_code: Vec<String>,
-        ) -> Violation {
-            Violation {
-                line: line,
-                token_location: token_location,
-                violation_string: String::from("Do not use NOLOCK"),
-                offending_code: offending_code,
-            }
-        }
-    }
-
-    pub struct LeftOpenTran {}
-    impl SqlRule for LeftOpenTran {
-        fn check(&self, fstat: &FileStateflags, _current_token: &str) -> bool {
+        pub fn left_tran_open(fstat: &FileStateflags, _current_token: &str) -> bool {
             if fstat.in_transaction {
                 return true;
             }
             false
         }
 
-        fn get_violation(
+        pub fn left_tran_open_violation(
             &self,
             line: u8,
             token_location: u8,
             offending_code: Vec<String>,
         ) -> Violation {
             Violation {
-                line: line,
-                token_location: token_location,
+                line,
+                token_location,
                 violation_string: String::from("Transaction left open at end of file"),
-                offending_code: offending_code,
+                offending_code,
             }
         }
-    }
 
-    pub struct NoSelectInTran {}
-    impl SqlRule for NoSelectInTran {
-        fn check(&self, fstat: &FileStateflags, current_token: &str) -> bool {
+        pub fn no_select_in_tran(fstat: &FileStateflags, current_token: &str) -> bool {
             if fstat.in_transaction && fstat.select && current_token.to_uppercase() == "SELECT" {
                 return true;
             }
             false
         }
 
-        fn get_violation(
-            &self,
-            line: u8,
-            token_location: u8,
-            offending_code: Vec<String>,
-        ) -> Violation {
-            Violation {
-                line: line,
-                token_location: token_location,
-                violation_string: String::from("Do not run select statements in transaction"),
-                offending_code: offending_code,
-            }
-        }
-    }
-
-    pub struct NoDeclareInTran {}
-    impl SqlRule for NoDeclareInTran {
-        fn check(&self, fstat: &FileStateflags, _current_token: &str) -> bool {
+        pub fn no_delcare_in_tran(fstat: &FileStateflags, _current_token: &str) -> bool {
             if fstat.in_transaction && fstat.declare {
                 return true;
             }
             false
-        }
-
-        fn get_violation(
-            &self,
-            line: u8,
-            token_location: u8,
-            offending_code: Vec<String>,
-        ) -> Violation {
-            Violation {
-                line: line,
-                token_location: token_location,
-                violation_string: String::from("Do not declare variables in transaction"),
-                offending_code: offending_code,
-            }
         }
     }
 }

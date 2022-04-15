@@ -48,9 +48,9 @@ pub mod sql_parsing {
 
     impl QueruParser {
         pub fn in_comment(&self) -> bool {
-            return self.flags.line_comment
+            self.flags.line_comment
                 || self.flags.block_comment
-                || self.flags.closing_block_comment;
+                || self.flags.closing_block_comment
         }
 
         fn clean_str(string_to_clean: &str) -> String {
