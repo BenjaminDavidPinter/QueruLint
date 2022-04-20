@@ -1,8 +1,6 @@
 pub mod sql_parsing {
     #[derive(Debug, Default)]
     pub struct QueruParser {
-        pub flags: FileStateflags,
-        pub vars: Vec<Variable>,
     }
 
     #[derive(Debug, Default)]
@@ -27,7 +25,7 @@ pub mod sql_parsing {
     }
 
     #[derive(Debug, Default)]
-    pub struct FileStateflags {
+    pub struct FileState {
         pub line_comment: bool,
         pub block_comment: bool,
         pub closing_block_comment: bool,
@@ -43,146 +41,165 @@ pub mod sql_parsing {
         pub where_clause_left_assignment: bool,
         pub where_clause_operand: bool,
         pub where_clause_right_assignment: bool,
-        pub commit: bool
+        pub commit: bool,
+        pub vars: Vec<Variable>
+    }
+    impl FileState{
+
+        //Do I really need to do this?
+        pub fn new() -> FileState {
+            Default::default()
+        }
+
+        pub fn in_comment(flags: &FileState) -> bool {
+            flags.line_comment || flags.block_comment || flags.closing_block_comment
+        }
+
+        pub fn finalize_closing_flags(flags: FileState) -> FileState { 
+            let mut new_flags = FileState { ..flags};
+
+            if flags.closing_block_comment {
+                new_flags.closing_block_comment = false;
+                new_flags.block_comment = false;
+            }
+
+            if flags.closing_select {
+                new_flags.closing_select = false;
+                new_flags.select = false;
+            }
+
+            new_flags
+
+        }
+
+        pub fn close_statement_flags(flags: FileState) -> FileState {
+            FileState {
+                declare : false,
+                check_datatype : false,
+                check_var_initial_value : false,
+                select : false,
+                ..flags
+            }
+        }
+
     }
 
     impl QueruParser {
-        pub fn in_comment(&self) -> bool {
-            self.flags.line_comment
-                || self.flags.block_comment
-                || self.flags.closing_block_comment
-        }
 
         fn clean_str(string_to_clean: &str) -> String {
             string_to_clean.replacen(';', "", 1).replacen('\'', "", 2)
         }
 
-        pub fn finalize_closing_flags(&mut self) {
-            //Finish block comment status bit flips
-            if self.flags.closing_block_comment {
-                self.flags.closing_block_comment = false;
-                self.flags.block_comment = false;
-            }
+        
+        pub fn interpret(current_flags: FileState, word: &str) -> FileState {
+            let mut current_flags = current_flags;
 
-            //Finish select status bit flips
-            if self.flags.closing_select {
-                self.flags.closing_select = false;
-                self.flags.select = false;
-            }
-        }
-
-        pub fn close_statement_flags(&mut self) {
-            self.flags.declare = false;
-            self.flags.check_datatype = false;
-            self.flags.check_var_initial_value = false;
-            self.flags.select = false;
-        }
-
-        pub fn set_flags(&mut self, word: &str) {
             if word.starts_with("--") {
-                self.flags.line_comment = true;
+                current_flags.line_comment = true;
             }
             if word.contains(';') {
-                self.flags.closing_select = true;
-                self.flags.declare = false;
+                current_flags.closing_select = true;
+                current_flags.declare = false;
             }
 
             match word.to_uppercase().as_str() {
                 "--" => {
-                    self.flags.line_comment = true;
-                    self.flags.closing_select = true;
+                    current_flags.line_comment = true;
+                    current_flags.closing_select = true;
                 }
                 "/*" => {
-                    self.flags.block_comment = true;
+                    current_flags.block_comment = true;
                 }
                 "*/" => {
-                    self.flags.closing_block_comment = true;
+                    current_flags.closing_block_comment = true;
                 }
                 "SELECT" => {
-                    self.flags.where_clause = false;
-                    if !self.in_comment() {
-                        self.flags.select = true;
+                    current_flags.where_clause = false;
+                    if !FileState::in_comment(&current_flags) {
+                        current_flags.select = true;
                     }
                 }
                 ";" => {
-                    self.flags.where_clause = false;
-                    self.flags.closing_select = true;
-                    if self.flags.check_var_initial_value {
-                        self.vars.last_mut().unwrap().initial_value = String::new();
-                        self.flags.check_var_initial_value = false;
+                    current_flags.where_clause = false;
+                    current_flags.closing_select = true;
+                    if current_flags.check_var_initial_value {
+                        current_flags.vars.last_mut().unwrap().initial_value = String::new();
+                        current_flags.check_var_initial_value = false;
                     }
                 }
                 "GO" => {
-                    self.flags.where_clause = false;
-                    self.flags.closing_select = true;
-                    self.close_statement_flags();
+                    current_flags.where_clause = false;
+                    current_flags.closing_select = true;
+                    current_flags = FileState::close_statement_flags(current_flags);
                 }
                 "BEGIN" => {
-                    self.flags.begin = true;
-                    self.flags.where_clause = false;
+                    current_flags.begin = true;
+                    current_flags.where_clause = false;
                 }
                 "TRAN" | "TRANSACTION" => {
-                    self.flags.where_clause = false;
-                    if self.flags.begin {
-                        self.flags.begin = false;
-                        self.flags.in_transaction = true;
-                    } else if self.flags.commit {
-                        self.flags.commit = false;
-                        self.flags.in_transaction = false;
+                    current_flags.where_clause = false;
+                    if current_flags.begin {
+                        current_flags.begin = false;
+                        current_flags.in_transaction = true;
+                    } else if current_flags.commit {
+                        current_flags.commit = false;
+                        current_flags.in_transaction = false;
                     }
                 }
                 "END" => {
-                    self.flags.where_clause = false;
-                    self.flags.end = true;
-                    self.close_statement_flags();
+                    current_flags.where_clause = false;
+                    current_flags.end = true;
+                    current_flags = FileState::close_statement_flags(current_flags);
                 },
                 "COMMIT" =>{
-                    self.flags.commit = true;
+                    current_flags.commit = true;
                 }
                 "DECLARE" => {
-                    self.flags.where_clause = false;
-                    self.flags.select = false;
-                    self.flags.declare = true;
+                    current_flags.where_clause = false;
+                    current_flags.select = false;
+                    current_flags.declare = true;
                 }
                 "=" => {
                     //Capture the step over '=' so we can get the value below
                 }
                 "WHERE" | "OR" | "AND" => {
-                    self.flags.where_clause = true;
+                    current_flags.where_clause = true;
                 }
                 &_ => {
                     //Implement in reverse precedent; Initial Value -> Type -> Name etc
                     //This is specifically for variable declarations
-                    if self.flags.check_var_initial_value {
-                        self.vars.last_mut().unwrap().initial_value = QueruParser::clean_str(word);
-                        self.flags.check_var_initial_value = false;
+                    if current_flags.check_var_initial_value {
+                        current_flags.vars.last_mut().unwrap().initial_value = QueruParser::clean_str(word);
+                        current_flags.check_var_initial_value = false;
                     }
-                    if self.flags.check_datatype {
-                        self.vars.last_mut().unwrap().variable_type = QueruParser::clean_str(word);
-                        self.flags.check_datatype = false;
-                        self.flags.check_var_initial_value = true;
+                    if current_flags.check_datatype {
+                        current_flags.vars.last_mut().unwrap().variable_type = QueruParser::clean_str(word);
+                        current_flags.check_datatype = false;
+                        current_flags.check_var_initial_value = true;
                     }
-                    if self.flags.declare {
-                        self.vars.push(Variable::new(QueruParser::clean_str(word))); //Just keep a copy of the possible variable name for later
-                        self.flags.declare = false;
-                        self.flags.check_datatype = true;
+                    if current_flags.declare {
+                        current_flags.vars.push(Variable::new(QueruParser::clean_str(word))); //Just keep a copy of the possible variable name for later
+                        current_flags.declare = false;
+                        current_flags.check_datatype = true;
                     }
 
                     //Just update the statuses on the where clause to track location
-                    if self.flags.where_clause {
-                        self.flags.where_clause = false;
-                        self.flags.where_clause_left_assignment = true;
-                    } else if self.flags.where_clause_left_assignment {
-                        self.flags.where_clause_left_assignment = false;
-                        self.flags.where_clause_operand = true;
-                    } else if self.flags.where_clause_operand {
-                        self.flags.where_clause_operand = false;
-                        self.flags.where_clause_right_assignment = true;
-                    } else if self.flags.where_clause_right_assignment {
-                        self.flags.where_clause_right_assignment = false;
+                    if current_flags.where_clause {
+                        current_flags.where_clause = false;
+                        current_flags.where_clause_left_assignment = true;
+                    } else if current_flags.where_clause_left_assignment {
+                        current_flags.where_clause_left_assignment = false;
+                        current_flags.where_clause_operand = true;
+                    } else if current_flags.where_clause_operand {
+                        current_flags.where_clause_operand = false;
+                        current_flags.where_clause_right_assignment = true;
+                    } else if current_flags.where_clause_right_assignment {
+                        current_flags.where_clause_right_assignment = false;
                     }
                 } //Leave this here as we implement the entire sql language
+
             }
+            current_flags
         }
     }
 }

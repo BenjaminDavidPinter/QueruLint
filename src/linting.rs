@@ -1,5 +1,5 @@
 pub mod sql_linting {
-    use crate::FileStateflags;
+    use crate::parsing::sql_parsing::FileState;
     use std::fmt;
 
     #[derive(Debug)]
@@ -39,14 +39,14 @@ pub mod sql_linting {
 
     pub struct Rules {}
     impl Rules {
-        pub fn no_select_star(fstat: &FileStateflags, current_token: &str) -> bool {
+        pub fn no_select_star(fstat: &FileState, current_token: &str) -> bool {
             if fstat.select && current_token == "*" {
                 return true;
             }
             false
         }
 
-        pub fn no_function_in_where(fstat: &FileStateflags, current_token: &str) -> bool {
+        pub fn no_function_in_where(fstat: &FileState, current_token: &str) -> bool {
             if (fstat.where_clause
                 || fstat.where_clause_left_assignment
                 || fstat.where_clause_operand
@@ -58,14 +58,14 @@ pub mod sql_linting {
             false
         }
 
-        pub fn no_nolock(fstat: &FileStateflags, current_token: &str) -> bool {
+        pub fn no_nolock(fstat: &FileState, current_token: &str) -> bool {
             if fstat.select && (current_token.to_uppercase() == "(NOLOCK)" || current_token.to_uppercase() == "NOLOCK") {
                 return true;
             }
             false
         }
 
-        pub fn left_tran_open(fstat: &FileStateflags, _current_token: &str) -> bool {
+        pub fn left_tran_open(fstat: &FileState, _current_token: &str) -> bool {
             if fstat.in_transaction {
                 return true;
             }
@@ -86,14 +86,14 @@ pub mod sql_linting {
             }
         }
 
-        pub fn no_select_in_tran(fstat: &FileStateflags, current_token: &str) -> bool {
+        pub fn no_select_in_tran(fstat: &FileState, current_token: &str) -> bool {
             if fstat.in_transaction && fstat.select && current_token.to_uppercase() == "SELECT" {
                 return true;
             }
             false
         }
 
-        pub fn no_delcare_in_tran(fstat: &FileStateflags, _current_token: &str) -> bool {
+        pub fn no_delcare_in_tran(fstat: &FileState, _current_token: &str) -> bool {
             if fstat.in_transaction && fstat.declare {
                 return true;
             }
