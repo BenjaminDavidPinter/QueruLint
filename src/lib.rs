@@ -1,18 +1,17 @@
-mod parsing;
 mod linting;
-pub use crate::parsing::sql_parsing::*;
+mod parsing;
 pub use crate::linting::sql_linting::*;
+pub use crate::parsing::sql_parsing::*;
 use std::fs::File;
 use std::io::Read;
 
-pub fn lint_files(args: &[&str]) -> Vec<Violation>{
+pub fn lint_files(args: &[&str]) -> Vec<Violation> {
     for r in args {
         match r.ends_with(".sql") {
             true => match File::open(r) {
                 Ok(file) => {
                     let parsed_file = file_tokenize(file);
-                    
-                    
+
                     //Is it safe to return from within here? Rather than return the value after we've escaped the match statement?
                     return review_file(parsed_file);
                 }
@@ -79,45 +78,72 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
 
         //State check on a per word basis
         for word in line {
-            if word.is_empty() { continue; } else { token_number += 1; }
+            if word.is_empty() {
+                continue;
+            } else {
+                token_number += 1;
+            }
 
-            state = FileState::finalize_closing_flags(state);
-            state = QueruParser::interpret(state, &word);
+            FileState::finalize_closing_flags(&mut state);
+            QueruParser::interpret(&mut state, &word);
 
+            if Rules::no_cursors(&state, &word) {
+                violations.push(Violation::new(
+                    line_number.try_into().unwrap(),
+                    token_number, 
+                    line_copy.clone(),
+                    String::from("Do not use CURSORS, prefer while loops with counters")
+                ));
+            }
+            if Rules::must_qualify_tables(&state, &word) {
+                violations.push(Violation::new(
+                    line_number.try_into().unwrap(),
+                    token_number,
+                    line_copy.clone(),
+                    String::from("Fully qualify tables")
+                ));
+            }
             if Rules::no_select_star(&state, &word) {
                 violations.push(Violation::new(
-                line_number.try_into().unwrap(),
-                token_number,
-                line_copy.clone(),
-                String::from("Do not use * in select list, specify columns")));
+                    line_number.try_into().unwrap(),
+                    token_number,
+                    line_copy.clone(),
+                    String::from("Do not use * in select list, specify columns"),
+                ));
             }
             if Rules::no_delcare_in_tran(&state, &word) {
                 violations.push(Violation::new(
-                line_number.try_into().unwrap(),
-                token_number,
-                line_copy.clone(),
-                String::from("Do not declare variables in transaction")));
+                    line_number.try_into().unwrap(),
+                    token_number,
+                    line_copy.clone(),
+                    String::from("Do not declare variables in transaction"),
+                ));
             }
             if Rules::no_function_in_where(&state, &word) {
                 violations.push(Violation::new(
-                line_number.try_into().unwrap(),
-                token_number,
-                line_copy.clone(),
-                String::from("Do not use functions in where clauses, cache functions as variables first")));
+                    line_number.try_into().unwrap(),
+                    token_number,
+                    line_copy.clone(),
+                    String::from(
+                        "Do not use functions in where clauses, cache functions as variables first",
+                    ),
+                ));
             }
             if Rules::no_nolock(&state, &word) {
                 violations.push(Violation::new(
-                line_number.try_into().unwrap(),
-                token_number,
-                line_copy.clone(),
-                String::from("Do not use NOLOCK")));
+                    line_number.try_into().unwrap(),
+                    token_number,
+                    line_copy.clone(),
+                    String::from("Do not use NOLOCK"),
+                ));
             }
             if Rules::no_select_in_tran(&state, &word) {
                 violations.push(Violation::new(
-                line_number.try_into().unwrap(),
-                token_number,
-                line_copy.clone(),
-                String::from("Do not run select statements in transaction")));
+                    line_number.try_into().unwrap(),
+                    token_number,
+                    line_copy.clone(),
+                    String::from("Do not run select statements in transaction"),
+                ));
             }
         }
     }
@@ -126,7 +152,8 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
             0,
             0,
             Vec::new(),
-            String::from("Transaction left open at end of file")));
+            String::from("Transaction left open at end of file"),
+        ));
     }
     violations
 }

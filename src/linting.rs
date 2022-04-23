@@ -14,7 +14,7 @@ pub mod sql_linting {
             line: u8,
             token_location: u8,
             offending_code: Vec<String>,
-            violation_message: String
+            violation_message: String,
         ) -> Violation {
             Violation {
                 line,
@@ -39,6 +39,20 @@ pub mod sql_linting {
 
     pub struct Rules {}
     impl Rules {
+        pub fn no_cursors(fstat: &FileState, current_token: &str) -> bool {
+            if !FileState::in_comment(fstat) && current_token == "CURSOR" {
+                return true;
+            }
+            false
+        }
+
+        pub fn must_qualify_tables(fstat: &FileState, current_token: &str) -> bool {
+            if fstat.from_table && !current_token.contains('.') {
+                return true;
+            }
+            false
+        }
+
         pub fn no_select_star(fstat: &FileState, current_token: &str) -> bool {
             if fstat.select && current_token == "*" {
                 return true;
@@ -59,7 +73,10 @@ pub mod sql_linting {
         }
 
         pub fn no_nolock(fstat: &FileState, current_token: &str) -> bool {
-            if fstat.select && (current_token.to_uppercase() == "(NOLOCK)" || current_token.to_uppercase() == "NOLOCK") {
+            if fstat.select
+                && (current_token.to_uppercase() == "(NOLOCK)"
+                    || current_token.to_uppercase() == "NOLOCK")
+            {
                 return true;
             }
             false

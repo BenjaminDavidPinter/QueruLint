@@ -5,7 +5,7 @@ mod lints {
     #[test]
     fn no_select_star() {
         let violations = sql_parser::lint_files(&["noselectstar.sql"]);
-        println!("{:#?}", violations);
+        println!("{:#?}", violations);        
         assert!(violations.len() == 1);
         assert!(violations[0].violation_string == "Do not use * in select list, specify columns")
     }
@@ -39,7 +39,10 @@ mod lints {
         let violations = sql_parser::lint_files(&["nofunctionsinwhere.sql"]);
         println!("{:#?}", violations);
         assert!(violations.len() == 1);
-        assert!(violations[0].violation_string == "Do not use functions in where clauses, cache functions as variables first")
+        assert!(
+            violations[0].violation_string
+                == "Do not use functions in where clauses, cache functions as variables first"
+        )
     }
 
     #[test]
@@ -48,5 +51,21 @@ mod lints {
         println!("{:#?}", violations);
         assert!(violations.len() == 1);
         assert!(violations[0].violation_string == "Do not declare variables in transaction")
+    }
+
+    #[test]
+    fn no_cursors() {
+        let violations = sql_parser::lint_files(&["nocursors.sql"]);
+        println!("{:#?}", violations);
+        assert!(violations.len() == 1);
+        assert!(violations[0].violation_string == "Do not use CURSORS, prefer while loops with counters");
+    }
+
+    #[test]
+    fn must_qualify_tables() {
+        let violations = sql_parser::lint_files(&["fullyqualifytables.sql"]);
+        println!("{:#?}", violations);
+        assert!(violations.len() == 1);
+        assert!(violations[0].violation_string == "Fully qualify tables");
     }
 }

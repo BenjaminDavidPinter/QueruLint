@@ -1,1 +1,1 @@
-select col1, cl2 from table with (nolock)
+select col1, cl2 from dbo.thing with (nolock)

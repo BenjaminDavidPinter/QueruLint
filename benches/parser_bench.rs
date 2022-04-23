@@ -44,13 +44,26 @@ pub fn bench_no_declare_in_tran(c: &mut Criterion) {
     c.bench_function("No DECLARE in TRAN", |b| b.iter(no_declare_in_tran));
 }
 
-
-
-criterion_group!(benches, 
-    bench_no_select_star, 
+fn no_cursors() {
+    let _violations = sql_parser::lint_files(&["nocursors.sql"]);
+}
+pub fn bench_no_cursors(c: &mut Criterion) {
+    c.bench_function("No CURSORS", |b| b.iter(no_cursors));
+}
+fn must_qualify_tables() {
+    let _violations = sql_parser::lint_files(&["fullyqualifytables.sql"]);
+}
+pub fn bench_must_qualify_tables(c: &mut Criterion) {
+    c.bench_function("Fully Qualify Tables", |b| b.iter(must_qualify_tables));
+}
+criterion_group!(
+    benches,
+    bench_no_select_star,
     bench_no_open_trans_at_end_of_file,
     bench_no_nolock,
     bench_no_select_in_tran,
     bench_no_funcs_in_where_clause,
-    bench_no_declare_in_tran);
+    bench_no_declare_in_tran,
+    bench_no_cursors
+);
 criterion_main!(benches);
