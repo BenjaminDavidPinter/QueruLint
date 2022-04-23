@@ -5,7 +5,7 @@ mod lints {
     #[test]
     fn no_select_star() {
         let violations = sql_parser::lint_files(&["noselectstar.sql"]);
-        println!("{:#?}", violations);        
+        println!("{:#?}", violations);
         assert!(violations.len() == 1);
         assert!(violations[0].violation_string == "Do not use * in select list, specify columns")
     }
@@ -58,7 +58,10 @@ mod lints {
         let violations = sql_parser::lint_files(&["nocursors.sql"]);
         println!("{:#?}", violations);
         assert!(violations.len() == 1);
-        assert!(violations[0].violation_string == "Do not use CURSORS, prefer while loops with counters");
+        assert!(
+            violations[0].violation_string
+                == "Do not use CURSORS, prefer while loops with counters"
+        );
     }
 
     #[test]

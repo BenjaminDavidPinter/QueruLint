@@ -90,9 +90,9 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
             if Rules::no_cursors(&state, &word) {
                 violations.push(Violation::new(
                     line_number.try_into().unwrap(),
-                    token_number, 
+                    token_number,
                     line_copy.clone(),
-                    String::from("Do not use CURSORS, prefer while loops with counters")
+                    String::from("Do not use CURSORS, prefer while loops with counters"),
                 ));
             }
             if Rules::must_qualify_tables(&state, &word) {
@@ -100,7 +100,7 @@ fn review_file(file_to_review: ParsedSqlFile) -> Vec<Violation> {
                     line_number.try_into().unwrap(),
                     token_number,
                     line_copy.clone(),
-                    String::from("Fully qualify tables")
+                    String::from("Fully qualify tables"),
                 ));
             }
             if Rules::no_select_star(&state, &word) {

@@ -71,34 +71,35 @@ pub mod sql_parsing {
             }
         }
 
-        pub fn close_statement_flags(flags: &mut FileState){
+        pub fn close_statement_flags(flags: &mut FileState) {
             flags.declare = false;
             flags.check_datatype = false;
             flags.check_var_initial_value = false;
             flags.select = false;
         }
-
     }
     impl fmt::Display for FileState {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "[{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}]",
-                   self.line_comment as i32,
-                   self.block_comment as i32,
-        self.closing_block_comment as i32,
-                   self.closing_select as i32,
-                   self.select as i32,
-                   self.begin as i32,
-                   self.end as i32,
-                   self.in_transaction as i32,
-                   self.declare as i32,
-                   self.check_datatype as i32,
-                   self.check_var_initial_value as i32,
-                   self.where_clause as i32,
-                   self.where_clause_left_assignment as i32,
-                   self.where_clause_operand as i32,
-                   self.where_clause_right_assignment as i32,
-                   self.commit as i32
-                   )
+            write!(
+                f,
+                "[{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}]",
+                self.line_comment as i32,
+                self.block_comment as i32,
+                self.closing_block_comment as i32,
+                self.closing_select as i32,
+                self.select as i32,
+                self.begin as i32,
+                self.end as i32,
+                self.in_transaction as i32,
+                self.declare as i32,
+                self.check_datatype as i32,
+                self.check_var_initial_value as i32,
+                self.where_clause as i32,
+                self.where_clause_left_assignment as i32,
+                self.where_clause_operand as i32,
+                self.where_clause_right_assignment as i32,
+                self.commit as i32
+            )
         }
     }
 
@@ -107,7 +108,7 @@ pub mod sql_parsing {
             string_to_clean.replacen(';', "", 1).replacen('\'', "", 2)
         }
 
-        pub fn interpret(current_flags: &mut FileState, word: &str){
+        pub fn interpret(current_flags: &mut FileState, word: &str) {
             let mut current_flags = current_flags;
 
             if word.starts_with("--") {
@@ -131,10 +132,10 @@ pub mod sql_parsing {
                 }
                 "SELECT" => {
                     current_flags.where_clause = false;
-                    if !FileState::in_comment(&current_flags) {
+                    if !FileState::in_comment(current_flags) {
                         current_flags.select = true;
                     }
-                },
+                }
                 "FROM" => {
                     if current_flags.select {
                         current_flags.from = true;
@@ -151,7 +152,7 @@ pub mod sql_parsing {
                 "GO" => {
                     current_flags.where_clause = false;
                     current_flags.closing_select = true;
-                    FileState::close_statement_flags(&mut current_flags);
+                    FileState::close_statement_flags(current_flags);
                 }
                 "BEGIN" => {
                     current_flags.begin = true;
@@ -170,7 +171,7 @@ pub mod sql_parsing {
                 "END" => {
                     current_flags.where_clause = false;
                     current_flags.end = true;
-                    FileState::close_statement_flags(&mut current_flags);
+                    FileState::close_statement_flags(current_flags);
                 }
                 "COMMIT" => {
                     current_flags.commit = true;
@@ -185,9 +186,9 @@ pub mod sql_parsing {
                 }
                 "WHERE" | "OR" | "AND" => {
                     current_flags.where_clause = true;
-                },
+                }
                 "FETCH" => {
-                    if current_flags.select && !FileState::in_comment(&current_flags) {
+                    if current_flags.select && !FileState::in_comment(current_flags) {
                         current_flags.select = false;
                     }
                 }
@@ -233,8 +234,6 @@ pub mod sql_parsing {
                     } else if current_flags.from_table {
                         current_flags.from_table = false;
                     }
-
-                    
                 } //Leave this here as we implement the entire sql language
             }
         }
